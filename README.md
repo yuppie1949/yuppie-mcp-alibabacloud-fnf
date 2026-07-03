@@ -1,106 +1,116 @@
-# yuppie-mcp-lark
+# yuppie-mcp-fnf
 
-飞书（Lark / Feishu）MCP Server — 让 AI 助手通过 MCP 协议操作飞书消息、多维表格、电子表格。
+阿里云 FNF (Serverless 工作流) MCP Server — 让 AI 助手通过 MCP 协议操作阿里云 FNF。
 
-## 特性
+## 功能
 
-- 消息：发送单聊/群聊消息
-- 多维表格：搜索记录（支持分页、排序、过滤）
-- 电子表格：元信息查询、工作表增删复制、范围读写、追加数据、删除行列
-- 快捷操作：列过滤、批次索引、批量更新、批量追加、按批次读取
-- 鉴权：基于飞书应用 `tenant_access_token`，自动刷新
-- 部署：仅 stdio，本地 AI 助手友好
+### 流程管理
+- **查询流程详情**: 获取指定流程的名称、类型、执行模式、描述等信息
+- **流程列表**: 批量查询流程，支持分页
+
+### 执行管理
+- **异步启动执行**: 启动流程执行并立即返回
+- **同步启动执行**: 启动流程执行并等待完成
+- **停止执行**: 停止正在运行的执行
+- **查询执行状态**: 获取指定执行的状态信息
+- **执行历史列表**: 查询流程的执行记录列表，支持分页
+- **执行步骤详情**: 获取执行的每个步骤的详细信息
 
 ## 快速开始
 
-### Claude Code
-
-在 `.mcp.json` 中添加（`--refresh` 强制拉取 PyPI 最新版，忽略本地缓存）：
-
-```json
-{
-  "mcpServers": {
-    "lark": {
-      "type": "stdio",
-      "command": "uvx",
-      "args": ["--refresh", "yuppie-mcp-lark"],
-      "env": {
-        "LARK_APP_ID": "cli_xxx",
-        "LARK_APP_SECRET": "xxx"
-      }
-    }
-  }
-}
-```
-
-### Cursor
-
-在 `~/.cursor/mcp.json` 中添加同上配置。
-
-### Cherry Studio / Claude Desktop / OpenCode
-
-参照上方 env 字段，按各自 MCP 配置格式填入即可。
-
-## 环境变量
-
-| 变量 | 必填 | 默认值 | 说明 |
-|------|------|--------|------|
-| `LARK_APP_ID` | 是 | - | 飞书应用 App ID |
-| `LARK_APP_SECRET` | 是 | - | 飞书应用 App Secret |
-| `LARK_BASE_URL` | 否 | `https://open.feishu.cn` | 国际版设为 `https://open.larksuite.com` |
-
-## 可用工具（共 17 个）
-
-### 消息
-
-| 工具 | 说明 |
-|------|------|
-| `lark_send_message` | 发送消息（支持 text/post/image/interactive 等） |
-
-### 多维表格
-
-| 工具 | 说明 |
-|------|------|
-| `lark_search_records` | 搜索记录（支持分页、排序、过滤） |
-
-### 电子表格通用
-
-| 工具 | 说明 |
-|------|------|
-| `lark_get_spreadsheet_metainfo` | 获取电子表格元信息 |
-| `lark_add_sheet` | 添加工作表 |
-| `lark_delete_sheet` | 删除工作表 |
-| `lark_copy_sheet` | 复制工作表 |
-| `lark_read_range` | 读取范围数据 |
-| `lark_write_range` | 写入范围数据 |
-| `lark_append_data` | 追加数据 |
-| `lark_delete_dimension` | 删除行列 |
-
-### 电子表格快捷操作
-
-| 工具 | 说明 |
-|------|------|
-| `lark_quick_filter_sheet_columns` | 只保留指定列，删除其余列 |
-| `lark_quick_set_batch_index` | 按列设置批次索引 |
-| `lark_quick_set_header_list` | 写入新表头 |
-| `lark_quick_get_column_last_value` | 获取列最后一个非空值 |
-| `lark_quick_get_rows_by_batch` | 按批次读取行 |
-| `lark_quick_batch_update` | 批量更新行 |
-| `lark_quick_batch_append` | 批量追加行 |
-
-## 测试与调试
+### 安装
 
 ```bash
+pip install yuppie-mcp-fnf
+```
+
+### 配置
+
+通过环境变量配置阿里云凭证：
+
+```bash
+export FNF_ACCESS_KEY_ID=your_access_key_id
+export FNF_ACCESS_KEY_SECRET=your_access_key_secret
+# 可选：指定 endpoint（默认 cn-hangzhou.fnf.aliyuncs.com）
+export FNF_ENDPOINT=cn-hangzhou.fnf.aliyuncs.com
+```
+
+### 运行
+
+```bash
+yuppie-mcp-fnf
+```
+
+## 开发
+
+```bash
+git clone https://github.com/yuppie1949/yuppie-mcp-fnf
+cd yuppie-mcp-fnf
 uv pip install -e ".[dev]"
 uv run pytest -v
 ```
 
-使用 MCP Inspector 调试（需先在 `.env` 配置 `LARK_APP_ID` / `LARK_APP_SECRET`）：
+### 本地调试
 
 ```bash
-npx @modelcontextprotocol/inspector uv run yuppie-mcp-lark
+# 方式1: 直接通过环境变量运行
+FNF_ACCESS_KEY_ID=xxx FNF_ACCESS_KEY_SECRET=xxx uv run yuppie-mcp-fnf
+
+# 方式2: 使用 .env 文件（推荐）
+# 先编辑 .env 填入真实凭证，然后：
+uv run yuppie-mcp-fnf
+
+# 方式3: 使用 MCP Inspector 调试
+npx @modelcontextprotocol/inspector uv run yuppie-mcp-fnf
 ```
 
-## License
+## 工具列表
+
+| 工具名 | 说明 |
+|--------|------|
+| `fnf_describe_flow` | 获取 FNF 流程信息 |
+| `fnf_describe_flow_inputs` | 获取 FNF 流程信息及入参定义（含类型、示例 JSON） |
+| `fnf_list_flows` | 查询 FNF 流程列表 |
+| `fnf_start_execution` | 异步启动 FNF 流程执行 |
+| `fnf_start_sync_execution` | 同步启动 FNF 流程执行 |
+| `fnf_stop_execution` | 停止 FNF 流程执行 |
+| `fnf_describe_execution` | 查询 FNF 执行状态 |
+| `fnf_list_executions` | 查询 FNF 执行历史列表 |
+| `fnf_get_execution_history` | 获取 FNF 执行步骤详情 |
+
+## 入参定义（fnf_describe_flow_inputs）
+
+`fnf_describe_flow_inputs` 可以从 Flow 的 States 中解析出入参定义，让 AI 知道每个参数的格式。
+
+在 FNF Flow 中创建一个 **模板转换** 节点（`Action: Extensions:TemplateTransform`），
+`template` 字段写入参的 JSON 定义：
+
+### 支持的类型
+
+| 类型 | 含义 | 示例值 |
+|------|------|--------|
+| `string` | 字符串 | `"示例文本"` |
+| `int` | 整数 | `0` |
+| `select` | 下拉选择（需 `enum`） | `"第一个选项"` |
+| `object` | JSON 对象 | `{"key": "value"}` |
+| `array[string]` | 字符串数组 | `["item1", "item2"]` |
+| `file` | 单文件 | `"https://example.com/file.pdf"` |
+| `file-list` | 文件列表 | `["url1", "url2"]` |
+
+### 示例
+
+```json
+{
+    "title": {"type": "string", "label": "文章标题", "required": 1},
+    "partment": {"type": "select", "label": "部门", "enum": ["销售部", "技术部"]},
+    "count": {"type": "int", "label": "数量"},
+    "info": {"type": "object", "label": "详细信息"},
+    "tags": {"type": "array[string]", "label": "标签"},
+    "cover": {"type": "file", "label": "封面URL"},
+    "attachments": {"type": "file-list", "label": "附件列表"}
+}
+```
+
+## 许可证
 
 MIT

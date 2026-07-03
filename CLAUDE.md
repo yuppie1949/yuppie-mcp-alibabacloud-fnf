@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with th
 
 ## 项目概述
 
-`yuppie-mcp-lark` 是一个 MCP (Model Context Protocol) Server，让 AI 助手通过 MCP 协议操作飞书（Lark / Feishu）。基于飞书 OpenAPI（`tenant_access_token` 鉴权），覆盖消息、多维表格、电子表格三大业务域。
+`yuppie-mcp-fnf` 是一个 MCP (Model Context Protocol) Server，让 AI 助手通过 MCP 协议操作阿里云 FNF（Serverless 工作流）。基于阿里云 FNF OpenAPI SDK，覆盖流程管理和执行管理两大业务域。
 
 ## 开发命令
 
@@ -23,28 +23,26 @@ ruff format --check src/
 mypy src/
 
 # 本地运行 MCP Server（stdio 模式）
-LARK_APP_ID=cli_xxx LARK_APP_SECRET=xxx uv run yuppie-mcp-lark
+FNF_ACCESS_KEY_ID=xxx FNF_ACCESS_KEY_SECRET=xxx uv run yuppie-mcp-fnf
 ```
 
 ## 架构设计
 
 ### 核心模块
 
-- **`server.py`**: MCP Server 入口，FastMCP 注册 17 个工具
-- **`utils/config.py`**: `LarkConfig` 数据类，`from_env()` 读取并校验 `LARK_APP_ID`/`LARK_APP_SECRET`/`LARK_BASE_URL`，自动加载 `.env`
-- **`utils/lark/`**: 飞书客户端（mixin 模式）
-  - `base.py` — `_LarkBase`：httpx client、tenant_access_token 自动刷新、`_request`/`_get`/`_post`/`_put`、`_index_to_letter`、90217 限流重试
-  - `messages.py` — `MessagesMixin`：消息发送
-  - `bitable.py` — `BitableMixin`：多维表格记录搜索
-  - `sheets.py` — `SheetsMixin`：通用电子表格操作 + 列查找辅助（`find_sheet_ids`、`_resolve_column_letter`、`_ensure_column`、`_get_sheet_dimensions`）
-  - `sheets_quick.py` — `QuickSheetsMixin`：电子表格快捷业务操作（过滤列、批次索引、批量更新等）
-  - `__init__.py` — `LarkClient(_LarkBase, MessagesMixin, BitableMixin, SheetsMixin, QuickSheetsMixin)` 聚合
-- **`tools/`**: MCP 工具层（按域分），每个模块持模块级 client 单例，首次调用时懒加载
+- **`server.py`**: MCP Server 入口，FastMCP 注册工具
+- **`utils/config.py`**: `FNFConfig` 数据类，`from_env()` 读取并校验 `FNF_ACCESS_KEY_ID`/`FNF_ACCESS_KEY_SECRET`/`FNF_ENDPOINT`，自动加载 `.env`。支持阿里云标准环境变量（`ALIBABA_CLOUD_ACCESS_KEY_ID`）和项目专用变量，项目专用优先。
+- **`utils/fnf/`**: FNF 客户端
+  - `client.py` — `AliyunFNFClient`：封装 `alibabacloud_fnf20190315` SDK，提供同步方法。包括 `describe_flow`、`list_flows`、`start_execution`、`start_sync_execution`、`stop_execution`、`describe_execution`、`list_executions`、`get_execution_history`
+- **`tools/`**: MCP 工具层
+  - `flows.py` — 流程管理工具
+  - `executions.py` — 执行管理工具
   - 每个工具：Pydantic `BaseModel`（`str_strip_whitespace` + `extra="forbid"`）+ `async def` 实现 + markdown 输出 + try/except 友好错误
+  - 由于 SDK 是同步的，使用 `asyncio.to_thread()` 异步包装
 
 ### 客户端懒加载
 
-`_get_client()` 首次调用时从环境变量读取配置并构造 `LarkClient`，后续重用。三个 tools 模块各自独立懒加载。
+`_get_client()` 首次调用时从环境变量读取配置并构造 `AliyunFNFClient`，后续重用。两个 tools 模块各自独立懒加载。
 
 ### 传输模式
 
@@ -53,14 +51,77 @@ LARK_APP_ID=cli_xxx LARK_APP_SECRET=xxx uv run yuppie-mcp-lark
 ## 代码规范
 
 - 使用 `ruff`（line-length = 100）和 `mypy`（strict = true）
-- 异步函数 `async def`，底层 httpx 调用本身即异步
+- 异步函数 `async def`，同步 SDK 调用用 `asyncio.to_thread` 包装
 - 所有工具参数通过 Pydantic BaseModel 校验
 - 工具返回 markdown 字符串；失败时返回 `❌ ...失败：{异常}`
-- 方法命名：通用 API 薄包装用原始名，快捷业务操作前缀 `quick_sheets_`
+- FNF 客户端返回统一格式 `{"success": bool, "data": dict, "error": dict}`
 
-## 添加新工具
+## API 参考
 
-1. 在 `utils/lark/<域>.py` 的 mixin 上加飞书 API 薄包装方法
-2. 在 `tools/<域>.py` 加 BaseModel + async 实现 + 模块级 `_get_client`
-3. 在 `server.py` 用 `@mcp.tool(name=..., annotations=ToolAnnotations(...))` 注册，参数用 `Annotated[type, Field(...)]`
-4. 在 `tests/test_tools.py` 加 BaseModel 校验测试
+### 流程管理
+- `fnf_describe_flow(name)` — 获取流程详细信息
+- `fnf_describe_flow_inputs(name)` — 获取流程信息及入参定义（含类型、示例 JSON）
+- `fnf_list_flows(limit, next_token)` — 批量查询流程列表（支持分页）
+
+### 执行管理
+- `fnf_start_execution(flow_name, execution_name, input_data)` — 异步启动执行
+- `fnf_start_sync_execution(flow_name, execution_name, input_data)` — 同步启动执行
+- `fnf_stop_execution(flow_name, execution_name, cause)` — 停止执行
+- `fnf_describe_execution(flow_name, execution_name)` — 查询执行状态
+- `fnf_list_executions(flow_name, limit, next_token)` — 查询执行历史列表（支持分页）
+- `fnf_get_execution_history(flow_name, execution_name, limit, next_token)` — 获取执行步骤详情（支持分页）
+
+## 入参定义（fnf_describe_flow_inputs）
+
+`fnf_describe_flow_inputs` 可以从 Flow 的 States 中解析出入参定义（变量名 + 类型），
+让 AI 知道每个参数应该填什么格式。
+
+### 配置方式
+
+在 FNF Flow 中创建一个 **模板转换** 节点（`Action: Extensions:TemplateTransform`），
+放在"开始"节点之后，`template` 字段直接写入参的 JSON 定义：
+
+```json
+{
+    "参数名": {
+        "type": "string",        // 必填，支持的类型见下表
+        "label": "显示名称",      // 可选，参数的展示名称
+        "required": 1,           // 可选，1=必填，省略=选填
+        "enum": ["选项A", "选项B"]  // select 类型必填，可选值列表
+    }
+}
+```
+
+### 支持的类型
+
+| 类型 | 含义 | 示例值 |
+|------|------|--------|
+| `string` | 字符串 | `"示例文本"` |
+| `int` | 整数 | `0` |
+| `select` | 下拉选择（需 `enum`） | `"第一个选项"` |
+| `object` | JSON 对象 | `{"key": "value"}` |
+| `array[string]` | 字符串数组 | `["item1", "item2"]` |
+| `file` | 单个文件 | `"https://example.com/file.pdf"` |
+| `file-list` | 文件列表 | `["url1", "url2"]` |
+
+### 完整示例
+
+在模板转换节点的 template 字段粘贴：
+
+```json
+{
+    "title": {"type": "string", "label": "文章标题", "required": 1},
+    "partment": {"type": "select", "label": "部门", "enum": ["销售部", "技术部"]},
+    "count": {"type": "int", "label": "数量"},
+    "info": {"type": "object", "label": "详细信息"},
+    "tags": {"type": "array[string]", "label": "标签"},
+    "cover": {"type": "file", "label": "封面URL"},
+    "attachments": {"type": "file-list", "label": "附件列表"}
+}
+```
+
+### 兜底方案
+
+如果 Flow 中没有模板转换节点，会尝试解析 **代码节点**（`Extensions:CodeExecutor`，
+名称含"入参说明"）的 Parameters.code 字段（Python 代码的 return dict）。
+建议优先使用模板转换节点，避免 JSON 转义问题。

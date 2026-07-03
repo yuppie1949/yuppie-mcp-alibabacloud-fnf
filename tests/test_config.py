@@ -1,45 +1,71 @@
-"""LarkConfig 环境变量读取与校验测试"""
+"""FNFConfig 环境变量读取与校验测试"""
 
 import pytest
 
-from yuppie_mcp_lark.utils.config import DEFAULT_BASE_URL, LarkConfig
+from yuppie_mcp_fnf.utils.config import DEFAULT_ENDPOINT, FNFConfig
 
 
-def test_from_env_requires_app_id(monkeypatch):
-    monkeypatch.setenv("LARK_APP_ID", "")
-    monkeypatch.setenv("LARK_APP_SECRET", "secret")
-    with pytest.raises(ValueError, match="LARK_APP_ID"):
-        LarkConfig.from_env()
+def test_from_env_requires_key_id(monkeypatch):
+    monkeypatch.setenv("FNF_ACCESS_KEY_ID", "")
+    monkeypatch.setenv("FNF_ACCESS_KEY_SECRET", "secret")
+    monkeypatch.delenv("ALIBABA_CLOUD_ACCESS_KEY_ID", raising=False)
+    with pytest.raises(ValueError, match="FNF_ACCESS_KEY_ID|ALIBABA_CLOUD_ACCESS_KEY_ID"):
+        FNFConfig.from_env()
 
 
-def test_from_env_requires_app_secret(monkeypatch):
-    monkeypatch.setenv("LARK_APP_ID", "id")
-    monkeypatch.setenv("LARK_APP_SECRET", "")
-    with pytest.raises(ValueError, match="LARK_APP_SECRET"):
-        LarkConfig.from_env()
+def test_from_env_requires_key_secret(monkeypatch):
+    monkeypatch.setenv("FNF_ACCESS_KEY_ID", "id")
+    monkeypatch.setenv("FNF_ACCESS_KEY_SECRET", "")
+    monkeypatch.delenv("ALIBABA_CLOUD_ACCESS_KEY_SECRET", raising=False)
+    with pytest.raises(ValueError, match="FNF_ACCESS_KEY_SECRET|ALIBABA_CLOUD_ACCESS_KEY_SECRET"):
+        FNFConfig.from_env()
 
 
-def test_from_env_defaults_base_url(monkeypatch):
-    monkeypatch.setenv("LARK_APP_ID", "id")
-    monkeypatch.setenv("LARK_APP_SECRET", "secret")
-    monkeypatch.delenv("LARK_BASE_URL", raising=False)
-    cfg = LarkConfig.from_env()
-    assert cfg.app_id == "id"
-    assert cfg.app_secret == "secret"
-    assert cfg.base_url == DEFAULT_BASE_URL
+def test_from_env_reads_project_specific_vars(monkeypatch):
+    monkeypatch.setenv("FNF_ACCESS_KEY_ID", "fnf_id")
+    monkeypatch.setenv("FNF_ACCESS_KEY_SECRET", "fnf_secret")
+    monkeypatch.delenv("ALIBABA_CLOUD_ACCESS_KEY_ID", raising=False)
+    monkeypatch.delenv("ALIBABA_CLOUD_ACCESS_KEY_SECRET", raising=False)
+    monkeypatch.delenv("FNF_ENDPOINT", raising=False)
+    cfg = FNFConfig.from_env()
+    assert cfg.access_key_id == "fnf_id"
+    assert cfg.access_key_secret == "fnf_secret"
+    assert cfg.endpoint == DEFAULT_ENDPOINT
 
 
-def test_from_env_strips_trailing_slash(monkeypatch):
-    monkeypatch.setenv("LARK_APP_ID", "id")
-    monkeypatch.setenv("LARK_APP_SECRET", "secret")
-    monkeypatch.setenv("LARK_BASE_URL", "https://open.larksuite.com/")
-    cfg = LarkConfig.from_env()
-    assert cfg.base_url == "https://open.larksuite.com"
+def test_from_env_falls_back_to_alibaba_standard_vars(monkeypatch):
+    monkeypatch.delenv("FNF_ACCESS_KEY_ID", raising=False)
+    monkeypatch.delenv("FNF_ACCESS_KEY_SECRET", raising=False)
+    monkeypatch.setenv("ALIBABA_CLOUD_ACCESS_KEY_ID", "ali_id")
+    monkeypatch.setenv("ALIBABA_CLOUD_ACCESS_KEY_SECRET", "ali_secret")
+    cfg = FNFConfig.from_env()
+    assert cfg.access_key_id == "ali_id"
+    assert cfg.access_key_secret == "ali_secret"
+
+
+def test_project_specific_takes_priority(monkeypatch):
+    monkeypatch.setenv("FNF_ACCESS_KEY_ID", "fnf_id")
+    monkeypatch.setenv("FNF_ACCESS_KEY_SECRET", "fnf_secret")
+    monkeypatch.setenv("ALIBABA_CLOUD_ACCESS_KEY_ID", "ali_id")
+    monkeypatch.setenv("ALIBABA_CLOUD_ACCESS_KEY_SECRET", "ali_secret")
+    cfg = FNFConfig.from_env()
+    assert cfg.access_key_id == "fnf_id"
+    assert cfg.access_key_secret == "fnf_secret"
+
+
+def test_from_env_accepts_custom_endpoint(monkeypatch):
+    monkeypatch.setenv("FNF_ACCESS_KEY_ID", "id")
+    monkeypatch.setenv("FNF_ACCESS_KEY_SECRET", "secret")
+    monkeypatch.setenv("FNF_ENDPOINT", "ap-southeast-1.fnf.aliyuncs.com")
+    cfg = FNFConfig.from_env()
+    assert cfg.endpoint == "ap-southeast-1.fnf.aliyuncs.com"
 
 
 def test_from_env_strips_whitespace(monkeypatch):
-    monkeypatch.setenv("LARK_APP_ID", "  id  ")
-    monkeypatch.setenv("LARK_APP_SECRET", "  secret  ")
-    cfg = LarkConfig.from_env()
-    assert cfg.app_id == "id"
-    assert cfg.app_secret == "secret"
+    monkeypatch.setenv("FNF_ACCESS_KEY_ID", "  id  ")
+    monkeypatch.setenv("FNF_ACCESS_KEY_SECRET", "  secret  ")
+    monkeypatch.delenv("ALIBABA_CLOUD_ACCESS_KEY_ID", raising=False)
+    monkeypatch.delenv("ALIBABA_CLOUD_ACCESS_KEY_SECRET", raising=False)
+    cfg = FNFConfig.from_env()
+    assert cfg.access_key_id == "id"
+    assert cfg.access_key_secret == "secret"

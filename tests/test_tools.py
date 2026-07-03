@@ -3,140 +3,147 @@
 import pytest
 from pydantic import ValidationError
 
-from yuppie_mcp_lark.tools.bitable import SearchRecordsInput
-from yuppie_mcp_lark.tools.messages import SendMessageInput
-from yuppie_mcp_lark.tools.sheets import (
-    AddSheetInput,
-    AppendDataInput,
-    CopySheetInput,
-    DeleteDimensionInput,
-    DeleteSheetInput,
-    GetMetainfoInput,
-    ReadRangeInput,
-    WriteRangeInput,
+from yuppie_mcp_fnf.tools.flows import DescribeFlowInput, ListFlowsInput
+from yuppie_mcp_fnf.tools.executions import (
+    StartExecutionInput,
+    StartSyncExecutionInput,
+    StopExecutionInput,
+    DescribeExecutionInput,
+    ListExecutionsInput,
+    GetExecutionHistoryInput,
 )
 
 
-# ── 消息域 ──
+# ── 流程管理 ──
 
-def test_send_message_required_fields() -> None:
+
+def test_describe_flow_required():
     with pytest.raises(ValidationError):
-        SendMessageInput()  # 缺 receive_id 和 content
+        DescribeFlowInput()
 
 
-def test_send_message_defaults() -> None:
-    args = SendMessageInput(receive_id="ou_xxx", content='{"text":"hi"}')
-    assert args.msg_type == "text"
-    assert args.receive_id_type == "open_id"
+def test_describe_flow_accepts_valid_input():
+    args = DescribeFlowInput(name="my_flow")
+    assert args.name == "my_flow"
 
 
-def test_send_message_strips_whitespace() -> None:
-    args = SendMessageInput(receive_id="  ou_xxx  ", content='{"text":"hi"}')
-    assert args.receive_id == "ou_xxx"
+def test_describe_flow_strips_whitespace():
+    args = DescribeFlowInput(name="  my_flow  ")
+    assert args.name == "my_flow"
 
 
-def test_send_message_rejects_invalid_msg_type() -> None:
+def test_describe_flow_forbids_extra():
     with pytest.raises(ValidationError):
-        SendMessageInput(receive_id="ou_xxx", content="{}", msg_type="invalid_type")
+        DescribeFlowInput(name="flow", extra_field="bad")
 
 
-def test_send_message_accepts_uuid() -> None:
-    args = SendMessageInput(
-        receive_id="ou_xxx", content='{"text":"hi"}', uuid="a0d69e20-1dd1-458b-k525-dfeca4015204"
+def test_list_flows_defaults():
+    args = ListFlowsInput()
+    assert args.limit is None
+    assert args.next_token is None
+
+
+def test_list_flows_with_pagination():
+    args = ListFlowsInput(limit=10, next_token="abc123")
+    assert args.limit == 10
+    assert args.next_token == "abc123"
+
+
+def test_list_flows_rejects_invalid_limit():
+    with pytest.raises(ValidationError):
+        ListFlowsInput(limit=0)
+
+
+# ── 执行管理 ──
+
+
+def test_start_execution_required():
+    with pytest.raises(ValidationError):
+        StartExecutionInput()
+
+
+def test_start_execution_accepts_valid():
+    args = StartExecutionInput(flow_name="my_flow")
+    assert args.flow_name == "my_flow"
+
+
+def test_start_execution_with_all_fields():
+    args = StartExecutionInput(
+        flow_name="my_flow",
+        execution_name="exec_001",
+        input_data={"key": "value"},
     )
-    assert args.uuid == "a0d69e20-1dd1-458b-k525-dfeca4015204"
+    assert args.execution_name == "exec_001"
+    assert args.input_data == {"key": "value"}
 
 
-def test_send_message_forbids_extra() -> None:
+def test_start_sync_execution_required():
     with pytest.raises(ValidationError):
-        SendMessageInput(
-            receive_id="ou_xxx", content="{}", extra_field="bad"
-        )
+        StartSyncExecutionInput()
 
 
-# ── 多维表格域 ──
-
-def test_search_records_required_fields() -> None:
+def test_stop_execution_required():
     with pytest.raises(ValidationError):
-        SearchRecordsInput()
+        StopExecutionInput()
 
 
-def test_search_records_allows_only_required() -> None:
-    args = SearchRecordsInput(app_token="bascn", table_id="tblxxx")
-    assert args.view_id is None
-    assert args.page_size is None
+def test_stop_execution_accepts_valid():
+    args = StopExecutionInput(flow_name="my_flow", execution_name="exec_001")
+    assert args.cause is None
 
 
-# ── 电子表格域 ──
-
-def test_get_metainfo_required() -> None:
-    with pytest.raises(ValidationError):
-        GetMetainfoInput()
-
-
-def test_add_sheet_required() -> None:
-    with pytest.raises(ValidationError):
-        AddSheetInput()
-
-
-def test_delete_sheet_required() -> None:
-    with pytest.raises(ValidationError):
-        DeleteSheetInput()
-
-
-def test_copy_sheet_required() -> None:
-    with pytest.raises(ValidationError):
-        CopySheetInput()
-
-
-def test_read_range_required() -> None:
-    with pytest.raises(ValidationError):
-        ReadRangeInput()
-
-
-def test_write_range_required() -> None:
-    with pytest.raises(ValidationError):
-        WriteRangeInput()
-
-
-def test_append_data_required() -> None:
-    with pytest.raises(ValidationError):
-        AppendDataInput()
-
-
-def test_delete_dimension_defaults_and_required() -> None:
-    with pytest.raises(ValidationError):
-        DeleteDimensionInput(spreadsheet_token="x", sheet_id="y")
-    args = DeleteDimensionInput(
-        spreadsheet_token="x",
-        sheet_id="y",
-        start_index=1,
-        end_index=3,
+def test_stop_execution_with_cause():
+    args = StopExecutionInput(
+        flow_name="my_flow",
+        execution_name="exec_001",
+        cause="User canceled",
     )
-    assert args.major_dimension == "COLUMNS"
+    assert args.cause == "User canceled"
 
 
-# ── 电子表格快捷操作域 ──
-
-from yuppie_mcp_lark.tools.sheets_quick import ClearSheetContentInput
-
-
-def test_clear_sheet_content_required() -> None:
+def test_describe_execution_required():
     with pytest.raises(ValidationError):
-        ClearSheetContentInput()
+        DescribeExecutionInput()
 
 
-def test_clear_sheet_content_defaults() -> None:
-    args = ClearSheetContentInput(spreadsheet_token="x", sheet_id="y")
-    assert args.keep_header is True
-    assert args.data_start == 2
-    assert args.before_column is None
+def test_describe_execution_accepts_valid():
+    args = DescribeExecutionInput(flow_name="my_flow", execution_name="exec_001")
+    assert args.flow_name == "my_flow"
+    assert args.execution_name == "exec_001"
 
 
-def test_clear_sheet_content_with_before_column() -> None:
-    args = ClearSheetContentInput(
-        spreadsheet_token="x",
-        sheet_id="y",
-        before_column="F",
-    )
-    assert args.before_column == "F"
+def test_list_executions_required():
+    with pytest.raises(ValidationError):
+        ListExecutionsInput()
+
+
+def test_list_executions_with_pagination():
+    args = ListExecutionsInput(flow_name="my_flow", limit=20, next_token="token")
+    assert args.flow_name == "my_flow"
+    assert args.limit == 20
+    assert args.next_token == "token"
+
+
+def test_get_execution_history_required():
+    with pytest.raises(ValidationError):
+        GetExecutionHistoryInput()
+
+
+def test_get_execution_history_accepts_valid():
+    args = GetExecutionHistoryInput(flow_name="my_flow", execution_name="exec_001")
+    assert args.limit is None
+    assert args.next_token is None
+
+
+def test_all_inputs_forbid_extra():
+    inputs = [
+        DescribeFlowInput(name="x"),
+        ListFlowsInput(),
+        StartExecutionInput(flow_name="x"),
+        StopExecutionInput(flow_name="x", execution_name="x"),
+        DescribeExecutionInput(flow_name="x", execution_name="x"),
+        ListExecutionsInput(flow_name="x"),
+        GetExecutionHistoryInput(flow_name="x", execution_name="x"),
+    ]
+    for inp in inputs:
+        assert inp.model_config.get("extra") == "forbid"
