@@ -41,11 +41,48 @@ export FNF_ENDPOINT=cn-hangzhou.fnf.aliyuncs.com
 yuppie-mcp-fnf
 ```
 
+## MCP 集成
+
+### Claude Code
+
+在 `.mcp.json` 中添加：
+
+```json
+{
+  "mcpServers": {
+    "alibabacloud-fnf": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": ["--refresh", "yuppie-mcp-fnf"],
+      "env": {
+        "FNF_ACCESS_KEY_ID": "<your_access_key_id>",
+        "FNF_ACCESS_KEY_SECRET": "<your_access_key_secret>",
+        "FNF_ENDPOINT": "cn-hangzhou.fnf.aliyuncs.com"
+      }
+    }
+  }
+}
+```
+
+### Cursor
+
+在 `~/.cursor/mcp.json` 中添加同上配置。
+
+### Cherry Studio / Claude Desktop / OpenCode
+
+参照上方 `env` 字段，按各自 MCP 配置格式填入即可。
+
+## 环境变量
+
+| 变量 | 必填 | 默认值 | 说明 |
+|------|------|--------|------|
+| `FNF_ACCESS_KEY_ID` | 是 | - | 阿里云 AccessKey ID（也兼容 `ALIBABA_CLOUD_ACCESS_KEY_ID`） |
+| `FNF_ACCESS_KEY_SECRET` | 是 | - | 阿里云 AccessKey Secret（也兼容 `ALIBABA_CLOUD_ACCESS_KEY_SECRET`） |
+| `FNF_ENDPOINT` | 否 | `cn-hangzhou.fnf.aliyuncs.com` | FNF 服务地址 |
+
 ## 开发
 
 ```bash
-git clone https://github.com/yuppie1949/yuppie-mcp-fnf
-cd yuppie-mcp-fnf
 uv pip install -e ".[dev]"
 uv run pytest -v
 ```

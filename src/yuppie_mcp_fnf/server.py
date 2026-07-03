@@ -11,7 +11,15 @@ from mcp.types import ToolAnnotations
 from . import __version__
 from .tools import executions, flows
 
-mcp = FastMCP("fnf_mcp")
+mcp = FastMCP(
+    "fnf_mcp",
+    instructions=(
+        "阿里云 FNF (Serverless 工作流) MCP Server。"
+        "提供流程管理（查询流程、列表）和执行管理（启动/停止执行、查询状态、"
+        "执行历史）功能。"
+        "使用 fnf_describe_flow_inputs 可获取流程入参定义及示例 JSON。"
+    ),
+)
 mcp._mcp_server.version = __version__
 
 
