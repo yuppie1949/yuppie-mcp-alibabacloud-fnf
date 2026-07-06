@@ -229,3 +229,60 @@ def test_parse_data_tag_template():
     assert params[1]["variable"] == "dept"
     assert params[1]["type"] == "select"
     assert params[1]["enum"] == ["销售部", "技术部"]
+
+
+# ── YAML 格式 Definition ──
+
+
+def test_parse_yaml_definition():
+    """YAML 格式的 Definition 应正确解析"""
+    yaml_def = """Type: StateMachine
+Name: test-flow
+States:
+  - Name: 开始
+    Type: Pass
+    Next: 开始-入参说明
+  - Name: 开始-入参说明
+    Type: Task
+    Action: 'Extensions:TemplateTransform'
+    Parameters:
+      template: |-
+        <data>
+        {
+            "event": {
+                "type": "select",
+                "label": "事件",
+                "enum": ["Group Bot Message", "Send Bot Message"]
+            },
+            "status": {
+                "type": "select",
+                "label": "返回状态",
+                "enum": ["正常", "异常"]
+            }
+        }
+        </data>
+    Next: 结束
+  - Name: 结束
+    Type: Succeed
+    End: true
+"""
+    params = _parse_flow_inputs_from_definition(yaml_def)
+    assert len(params) == 2
+    assert params[0]["variable"] == "event"
+    assert params[0]["type"] == "select"
+    assert params[0]["label"] == "事件"
+    assert params[0]["enum"] == ["Group Bot Message", "Send Bot Message"]
+    assert params[1]["variable"] == "status"
+    assert params[1]["type"] == "select"
+    assert params[1]["label"] == "返回状态"
+    assert params[1]["enum"] == ["正常", "异常"]
+
+
+def test_parse_yaml_invalid():
+    """无效 YAML 返回空列表"""
+    assert _parse_flow_inputs_from_definition("{{invalid yaml") == []
+
+
+def test_parse_yaml_not_dict():
+    """YAML 解析后不是 dict 返回空列表"""
+    assert _parse_flow_inputs_from_definition("hello") == []

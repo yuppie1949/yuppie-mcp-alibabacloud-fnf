@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 from typing import Any, Dict, Optional, cast
 
+import yaml
 from alibabacloud_credentials.client import Client as CredentialClient
 from alibabacloud_credentials.models import Config as CredentialConfig
 from alibabacloud_fnf20190315 import models as fnf_models
@@ -103,8 +104,18 @@ def _parse_flow_inputs_from_definition(definition_str: str) -> list[Dict[str, An
     """
     if not definition_str:
         return []
+    # FNF Definition 可以是 JSON 或 YAML 格式，依次尝试
+    definition: Optional[Dict[str, Any]] = None
     try:
         definition = json.loads(definition_str)
+    except json.JSONDecodeError:
+        try:
+            definition = yaml.safe_load(definition_str)
+        except yaml.YAMLError:
+            return []
+    if not isinstance(definition, dict):
+        return []
+    try:
         for state in definition.get("States", []):
             if state.get("Name") != "开始-入参说明":
                 continue
@@ -125,7 +136,7 @@ def _parse_flow_inputs_from_definition(definition_str: str) -> list[Dict[str, An
                 result.append(entry)
             return result
         return []
-    except (json.JSONDecodeError, KeyError, TypeError, AttributeError):
+    except (KeyError, TypeError, AttributeError):
         return []
 
 
