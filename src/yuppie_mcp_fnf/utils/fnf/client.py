@@ -56,6 +56,39 @@ def _strip_long_fields(data: Dict[str, Any]) -> Dict[str, Any]:
     return result
 
 
+def _extract_template_data(template_value: Any) -> Optional[Dict[str, Any]]:
+    """从 template 值中提取参数定义 JSON
+
+    支持两种格式：
+    1. 直接是 dict：{"title": {"type": "string", ...}}
+    2. 带 <data>...</data> 标签的字符串："<data>\n{...}\n</data>"
+    """
+    if isinstance(template_value, dict):
+        return template_value
+
+    if not isinstance(template_value, str):
+        return None
+
+    # 尝试从 <data>...</data> 中提取
+    text = template_value.strip()
+    start_tag = "<data>"
+    end_tag = "</data>"
+    start_idx = text.find(start_tag)
+    end_idx = text.rfind(end_tag)
+    if start_idx != -1 and end_idx != -1:
+        json_text = text[start_idx + len(start_tag) : end_idx].strip()
+        try:
+            return json.loads(json_text)
+        except json.JSONDecodeError:
+            return None
+
+    # 兜底：直接尝试解析为 JSON
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        return None
+
+
 def _parse_flow_inputs_from_definition(definition_str: str) -> list[Dict[str, Any]]:
     """从 FDL Definition 解析出入参列表
 
@@ -77,7 +110,8 @@ def _parse_flow_inputs_from_definition(definition_str: str) -> list[Dict[str, An
                 continue
             if state.get("Action") != "Extensions:TemplateTransform":
                 continue
-            template = state.get("Parameters", {}).get("template", {})
+            template_raw = state.get("Parameters", {}).get("template", {})
+            template = _extract_template_data(template_raw)
             if not isinstance(template, dict):
                 return []
             for v in template.values():

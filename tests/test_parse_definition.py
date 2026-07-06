@@ -2,7 +2,10 @@
 
 import json
 
-from yuppie_mcp_fnf.utils.fnf.client import _parse_flow_inputs_from_definition
+from yuppie_mcp_fnf.utils.fnf.client import (
+    _extract_template_data,
+    _parse_flow_inputs_from_definition,
+)
 
 
 # ── 基础场景 ──
@@ -143,3 +146,86 @@ def test_wrong_name_ignored():
     ]
     definition_str = json.dumps({"States": states})
     assert _parse_flow_inputs_from_definition(definition_str) == []
+
+
+# ── _extract_template_data 单元测试 ──
+
+
+def test_extract_data_dict():
+    """直接传 dict 原样返回"""
+    data = {"title": {"type": "string"}}
+    assert _extract_template_data(data) == data
+
+
+def test_extract_data_with_data_tag():
+    """<data>...</data> 包裹的 JSON 应能正确提取"""
+    template_str = "<data>\n{\n    \"title\": {\n        \"type\": \"string\",\n        \"label\": \"文章标题\",\n        \"required\": 1\n    }\n}\n</data>"
+    result = _extract_template_data(template_str)
+    assert result == {"title": {"type": "string", "label": "文章标题", "required": 1}}
+
+
+def test_extract_data_multiple_fields():
+    """<data> 中多个字段正确解析"""
+    template_str = "<data>\n{\n    \"a\": {\"type\": \"string\"},\n    \"b\": {\"type\": \"int\"}\n}\n</data>"
+    result = _extract_template_data(template_str)
+    assert result == {"a": {"type": "string"}, "b": {"type": "int"}}
+
+
+def test_extract_data_no_data_tag():
+    """没有 <data> 标签的纯 JSON 字符串也能解析"""
+    template_str = '{"a": {"type": "string"}}'
+    result = _extract_template_data(template_str)
+    assert result == {"a": {"type": "string"}}
+
+
+def test_extract_data_invalid_string():
+    """无效 JSON 字符串返回 None"""
+    assert _extract_template_data("not json") is None
+
+
+# ── <data> 格式的集成测试 ──
+
+
+def _make_definition_with_data_tag(template_str: str) -> str:
+    """构造带 <data> 标签包裹 template 的 Definition"""
+    states = [
+        {"Name": "开始", "Type": "Pass", "Next": "开始-入参说明"},
+        {
+            "Name": "开始-入参说明",
+            "Type": "Task",
+            "Action": "Extensions:TemplateTransform",
+            "Parameters": {"template": template_str},
+        },
+        {"Name": "结束", "Type": "Succeed", "End": True},
+    ]
+    return json.dumps({"States": states})
+
+
+def test_parse_data_tag_template():
+    """真实场景：template 为带 <data> 标签的字符串"""
+    template_str = (
+        "<data>\n"
+        '{\n'
+        '    "title": {\n'
+        '        "type": "string",\n'
+        '        "label": "文章标题",\n'
+        '        "required": 1\n'
+        '    },\n'
+        '    "dept": {\n'
+        '        "type": "select",\n'
+        '        "label": "部门",\n'
+        '        "enum": ["销售部", "技术部"]\n'
+        '    }\n'
+        "}\n"
+        "</data>"
+    )
+    definition_str = _make_definition_with_data_tag(template_str)
+    params = _parse_flow_inputs_from_definition(definition_str)
+    assert len(params) == 2
+    assert params[0]["variable"] == "title"
+    assert params[0]["type"] == "string"
+    assert params[0]["label"] == "文章标题"
+    assert params[0]["required"] is True
+    assert params[1]["variable"] == "dept"
+    assert params[1]["type"] == "select"
+    assert params[1]["enum"] == ["销售部", "技术部"]
