@@ -2189,7 +2189,7 @@ wheels = [
 ]
 
 [[package]]
-name = "yuppie-mcp-fnf"
+name = "yuppie-mcp-alibabacloud-fnf"
 version = "0.1.1"
 source = { editable = "." }
 dependencies = [

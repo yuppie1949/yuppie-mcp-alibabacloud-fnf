@@ -2,7 +2,7 @@
 
 import json
 
-from yuppie_mcp_fnf.utils.fnf.client import (
+from yuppie_mcp_alibabacloud_fnf.utils.alibabacloud_fnf.client import (
     _extract_template_data,
     _parse_flow_inputs_from_definition,
 )

@@ -1,4 +1,4 @@
-# yuppie-mcp-fnf
+# yuppie-mcp-alibabacloud-fnf
 
 阿里云 FNF (Serverless 工作流) MCP Server — 让 AI 助手通过 MCP 协议操作阿里云 FNF。
 
@@ -21,7 +21,7 @@
 ### 安装
 
 ```bash
-pip install yuppie-mcp-fnf
+pip install yuppie-mcp-alibabacloud-fnf
 ```
 
 ### 配置
@@ -38,7 +38,7 @@ export FNF_ENDPOINT=cn-hangzhou.fnf.aliyuncs.com
 ### 运行
 
 ```bash
-yuppie-mcp-fnf
+yuppie-mcp-alibabacloud-fnf
 ```
 
 ## MCP 集成
@@ -53,7 +53,7 @@ yuppie-mcp-fnf
     "alibabacloud-fnf": {
       "type": "stdio",
       "command": "uvx",
-      "args": ["--refresh", "yuppie-mcp-fnf"],
+      "args": ["--refresh", "yuppie-mcp-alibabacloud-fnf"],
       "env": {
         "FNF_ACCESS_KEY_ID": "<your_access_key_id>",
         "FNF_ACCESS_KEY_SECRET": "<your_access_key_secret>",
@@ -91,14 +91,14 @@ uv run pytest -v
 
 ```bash
 # 方式1: 直接通过环境变量运行
-FNF_ACCESS_KEY_ID=xxx FNF_ACCESS_KEY_SECRET=xxx uv run yuppie-mcp-fnf
+FNF_ACCESS_KEY_ID=xxx FNF_ACCESS_KEY_SECRET=xxx uv run yuppie-mcp-alibabacloud-fnf
 
 # 方式2: 使用 .env 文件（推荐）
 # 先编辑 .env 填入真实凭证，然后：
-uv run yuppie-mcp-fnf
+uv run yuppie-mcp-alibabacloud-fnf
 
 # 方式3: 使用 MCP Inspector 调试
-npx @modelcontextprotocol/inspector uv run yuppie-mcp-fnf
+npx @modelcontextprotocol/inspector uv run yuppie-mcp-alibabacloud-fnf
 ```
 
 ## 工具列表

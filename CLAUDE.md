@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with th
 
 ## 项目概述
 
-`yuppie-mcp-fnf` 是一个 MCP (Model Context Protocol) Server，让 AI 助手通过 MCP 协议操作阿里云 FNF（Serverless 工作流）。基于阿里云 FNF OpenAPI SDK，覆盖流程管理和执行管理两大业务域。
+`yuppie-mcp-alibabacloud-fnf` 是一个 MCP (Model Context Protocol) Server，让 AI 助手通过 MCP 协议操作阿里云 FNF（Serverless 工作流）。基于阿里云 FNF OpenAPI SDK，覆盖流程管理和执行管理两大业务域。
 
 ## 开发命令
 
@@ -23,7 +23,7 @@ ruff format --check src/
 mypy src/
 
 # 本地运行 MCP Server（stdio 模式）
-FNF_ACCESS_KEY_ID=xxx FNF_ACCESS_KEY_SECRET=xxx uv run yuppie-mcp-fnf
+FNF_ACCESS_KEY_ID=xxx FNF_ACCESS_KEY_SECRET=xxx uv run yuppie-mcp-alibabacloud-fnf
 ```
 
 ## 架构设计
@@ -32,7 +32,7 @@ FNF_ACCESS_KEY_ID=xxx FNF_ACCESS_KEY_SECRET=xxx uv run yuppie-mcp-fnf
 
 - **`server.py`**: MCP Server 入口，FastMCP 注册工具
 - **`utils/config.py`**: `FNFConfig` 数据类，`from_env()` 读取并校验 `FNF_ACCESS_KEY_ID`/`FNF_ACCESS_KEY_SECRET`/`FNF_ENDPOINT`，自动加载 `.env`。支持阿里云标准环境变量（`ALIBABA_CLOUD_ACCESS_KEY_ID`）和项目专用变量，项目专用优先。
-- **`utils/fnf/`**: FNF 客户端
+- **`utils/alibabacloud_fnf/`**: FNF 客户端
   - `client.py` — `AliyunFNFClient`：封装 `alibabacloud_fnf20190315` SDK，提供同步方法。包括 `describe_flow`、`list_flows`、`start_execution`、`start_sync_execution`、`stop_execution`、`describe_execution`、`list_executions`、`get_execution_history`
 - **`tools/`**: MCP 工具层
   - `flows.py` — 流程管理工具

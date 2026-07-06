@@ -8,8 +8,8 @@ from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..utils.alibabacloud_fnf import AliyunFNFClient
 from ..utils.config import FNFConfig
-from ..utils.fnf import AliyunFNFClient
 
 _client: AliyunFNFClient | None = None
 
@@ -168,18 +168,43 @@ async def describe_flow_inputs(args: DescribeFlowInput) -> str:
             lines.append("⚠️ **未检测到入参定义节点**")
             lines.append("")
             lines.append("请在 FNF Flow 中添加一个名为 `开始-入参说明` 的 **模板转换** 节点，")
-            lines.append("template 字段填写参数定义的 JSON：")
+            lines.append("template 字段填写入参定义的 JSON（用 `<data>` 标签包裹）：")
             lines.append("")
             lines.append("```json")
+            lines.append("<data>")
             lines.append('{')
-            lines.append('    "title": {"type": "string", "label": "标题", "required": 1},')
-            lines.append('    "dept": {"type": "select", "enum": ["销售部", "技术部"]},')
-            lines.append('    "count": {"type": "int", "label": "数量"},')
-            lines.append('    "info": {"type": "object", "label": "详细信息"},')
-            lines.append('    "tags": {"type": "array[string]", "label": "标签"},')
-            lines.append('    "cover": {"type": "file", "label": "封面URL"},')
-            lines.append('    "attachments": {"type": "file-list", "label": "附件列表"}')
+            lines.append('    "title": {')
+            lines.append('        "type": "string",')
+            lines.append('        "label": "文章标题",')
+            lines.append('        "required": 1')
+            lines.append('    },')
+            lines.append('    "partment": {')
+            lines.append('        "type": "select",')
+            lines.append('        "label": "部门",')
+            lines.append('        "enum": ["销售部", "技术部"]')
+            lines.append('    },')
+            lines.append('    "count": {')
+            lines.append('        "type": "int",')
+            lines.append('        "label": "数量"')
+            lines.append('    },')
+            lines.append('    "info": {')
+            lines.append('        "type": "object",')
+            lines.append('        "label": "详细信息"')
+            lines.append('    },')
+            lines.append('    "tags": {')
+            lines.append('        "type": "array[string]",')
+            lines.append('        "label": "标签"')
+            lines.append('    },')
+            lines.append('    "cover": {')
+            lines.append('        "type": "file",')
+            lines.append('        "label": "封面URL"')
+            lines.append('    },')
+            lines.append('    "attachments": {')
+            lines.append('        "type": "file-list",')
+            lines.append('        "label": "附件列表"')
+            lines.append('    }')
             lines.append('}')
+            lines.append("</data>")
             lines.append("```")
         else:
             lines.append("")

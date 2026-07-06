@@ -6,7 +6,7 @@
 from __future__ import annotations
 
 import json
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, cast
 
 from alibabacloud_credentials.client import Client as CredentialClient
 from alibabacloud_credentials.models import Config as CredentialConfig
@@ -78,13 +78,13 @@ def _extract_template_data(template_value: Any) -> Optional[Dict[str, Any]]:
     if start_idx != -1 and end_idx != -1:
         json_text = text[start_idx + len(start_tag) : end_idx].strip()
         try:
-            return json.loads(json_text)
+            return cast(Dict[str, Any], json.loads(json_text))
         except json.JSONDecodeError:
             return None
 
     # 兜底：直接尝试解析为 JSON
     try:
-        return json.loads(text)
+        return cast(Dict[str, Any], json.loads(text))
     except json.JSONDecodeError:
         return None
 

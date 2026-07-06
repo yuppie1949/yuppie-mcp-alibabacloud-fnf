@@ -3,8 +3,8 @@
 import pytest
 from pydantic import ValidationError
 
-from yuppie_mcp_fnf.tools.flows import DescribeFlowInput, ListFlowsInput
-from yuppie_mcp_fnf.tools.executions import (
+from yuppie_mcp_alibabacloud_fnf.tools.flows import DescribeFlowInput, ListFlowsInput
+from yuppie_mcp_alibabacloud_fnf.tools.executions import (
     StartExecutionInput,
     StartSyncExecutionInput,
     StopExecutionInput,

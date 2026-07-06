@@ -7,8 +7,8 @@ from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ..utils.alibabacloud_fnf import AliyunFNFClient
 from ..utils.config import FNFConfig
-from ..utils.fnf import AliyunFNFClient
 
 _client: AliyunFNFClient | None = None
 

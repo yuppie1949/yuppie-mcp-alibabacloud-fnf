@@ -2,7 +2,7 @@
 
 import pytest
 
-from yuppie_mcp_fnf.utils.config import DEFAULT_ENDPOINT, FNFConfig
+from yuppie_mcp_alibabacloud_fnf.utils.config import DEFAULT_ENDPOINT, FNFConfig
 
 
 def test_from_env_requires_key_id(monkeypatch):

@@ -3,8 +3,8 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "yuppie-mcp-fnf"
-version = "0.1.1"
+name = "yuppie-mcp-alibabacloud-fnf"
+version = "0.1.2"
 description = "MCP Server for Alibaba Cloud FNF (Serverless Workflow)"
 readme = "README.md"
 license = "MIT"
@@ -41,14 +41,14 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/yuppie1949/yuppie-mcp-fnf"
-Repository = "https://github.com/yuppie1949/yuppie-mcp-fnf"
+Homepage = "https://github.com/yuppie1949/yuppie-mcp-alibabacloud-fnf"
+Repository = "https://github.com/yuppie1949/yuppie-mcp-alibabacloud-fnf"
 
 [project.scripts]
-yuppie-mcp-fnf = "yuppie_mcp_fnf.server:main"
+yuppie-mcp-alibabacloud-fnf = "yuppie_mcp_alibabacloud_fnf.server:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/yuppie_mcp_fnf"]
+packages = ["src/yuppie_mcp_alibabacloud_fnf"]
 
 [tool.hatch.build.targets.sdist]
 include = [
