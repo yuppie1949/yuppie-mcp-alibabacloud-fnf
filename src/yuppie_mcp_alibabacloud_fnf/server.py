@@ -13,6 +13,7 @@ from .tools import executions, flows
 
 mcp = FastMCP(
     "fnf_mcp",
+    host=os.getenv("MCP_HOST", "127.0.0.1"),
     instructions=(
         "阿里云 FNF (Serverless 工作流) MCP Server。"
         "提供流程管理（查询流程、列表）和执行管理（启动/停止执行、查询状态、"
@@ -236,9 +237,9 @@ async def tool_get_execution_history(
 
 
 def main() -> None:
-    transport = os.getenv("MCP_TRANSPORT", "streamable-http")
+    transport = os.getenv("MCP_TRANSPORT", "stdio")
     if transport == "streamable-http":
-        mcp.settings.port = int(os.getenv("MCP_PORT", "8080"))
+        mcp.settings.port = int(os.getenv("MCP_PORT", "8000"))
         mcp.run(transport="streamable-http")
     else:
         mcp.run()
